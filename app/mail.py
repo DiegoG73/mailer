@@ -9,9 +9,12 @@ bp = Blueprint('mail', __name__, url_prefix='/')
 
 @bp.route('/', methods=['GET'])
 def index():
+    search = request.args.get('search')
     db, c = get_db()
-
-    c.execute('SELECT * FROM email')
+    if search is None:
+        c.execute('SELECT * FROM email')
+    else:
+        c.execute("SELECT * FROM email WHERE content like %s", ('%' + search + '%', ))
     mails = c.fetchall()
 
     return render_template('mails/index.html', mails=mails)
@@ -48,6 +51,6 @@ def send(to, subject, content):
     from_email = Email(current_app.config['FROM_EMAIL'])
     to_email = To(to)
     content = Content('text/plain', content)
-    mail = Mail(from_email, subject, to_email, content)
+    mail = Mail(from_email, to_email, subject, content)
     response = sg.client.mail.send.post(request_body=mail.get())
     print(response)
